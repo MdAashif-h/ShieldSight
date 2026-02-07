@@ -1,0 +1,32 @@
+Feature Name,Description
+having_ip_address,URL uses IP address instead of domain name
+url_length,Total character length of the URL
+shortining_service,"URL uses shortening service (bit.ly, tinyurl)"
+having_at_symbol,Presence of @ symbol in URL
+double_slash_redirecting,Double slash // after protocol
+prefix_suffix,Hyphen (-) in domain name
+having_sub_domain,Number of subdomains in URL
+sslfinal_state,SSL certificate validity status
+domain_registration_length,Domain registration period length
+favicon,Favicon loaded from external domain
+port,Non-standard port used in URL
+https_token,HTTPS appears in domain name (suspicious)
+request_url,Percentage of external object requests
+url_of_anchor,Percentage of suspicious anchor tags
+links_in_tags,Percentage of links in meta/script/link tags
+sfh,Server Form Handler is blank or suspicious
+submitting_to_email,Form submits to email address
+abnormal_url,URL hostname not in WHOIS database
+redirect,Number of URL redirections
+on_mouseover,OnMouseOver changes status bar
+rightclick,Right-click function disabled
+popupwindow,Pop-up windows present
+iframe,IFrame redirection present
+age_of_domain,Domain age in months
+dnsrecord,DNS record exists for domain
+web_traffic,Website traffic ranking (Alexa)
+page_rank,Google PageRank value
+google_index,Page indexed by Google
+links_pointing_to_page,Number of external links pointing to page
+statistical_report,Domain in top phishing IPs/domains list
+result,"Label: -1 = Phishing, 1 = Legitimate"

@@ -1,0 +1,57 @@
+Feature,Description
+FILENAME,Feature description
+URL,The actual URL string
+URLLength,Total character length of URL
+Domain,Domain name extracted from URL
+DomainLength,Length of domain name
+IsDomainIP,Whether domain is an IP address
+TLD,"Top-level domain (.com, .net, etc)"
+URLSimilarityIndex,Similarity to known brand URLs
+CharContinuationRate,Rate of repeated characters
+TLDLegitimateProb,Probability TLD is legitimate
+URLCharProb,Character probability distribution
+TLDLength,Length of TLD
+NoOfSubDomain,Number of subdomains
+HasObfuscation,URL contains obfuscation/encoding
+NoOfObfuscatedChar,Count of obfuscated characters
+ObfuscationRatio,Ratio of obfuscated chars to total
+NoOfLettersInURL,Total letter count
+LetterRatioInURL,Letters / total chars
+NoOfDegitsInURL,Total digit count
+DegitRatioInURL,Digits / total chars
+NoOfEqualsInURL,Count of = symbols
+NoOfQMarkInURL,Count of ? symbols
+NoOfAmpersandInURL,Count of & symbols
+NoOfOtherSpecialCharsInURL,Other special char count
+SpacialCharRatioInURL,Special chars / total
+IsHTTPS,Uses HTTPS protocol
+LineOfCode,HTML lines of code count
+LargestLineLength,Max line length in HTML
+HasTitle,Page has HTML title
+Title,Actual title text
+DomainTitleMatchScore,Domain-title similarity
+URLTitleMatchScore,URL-title similarity
+HasFavicon,Page has favicon
+Robots,Has robots.txt file
+IsResponsive,Page is mobile-responsive
+NoOfURLRedirect,Number of redirects
+NoOfSelfRedirect,Self-redirects count
+HasDescription,Has meta description
+NoOfPopup,Number of pop-ups
+NoOfiFrame,Number of iframes
+HasExternalFormSubmit,Form submits externally
+HasSocialNet,Has social media links
+HasSubmitButton,Has submit button
+HasHiddenFields,Has hidden form fields
+HasPasswordField,Has password input field
+Bank,Contains bank-related keywords
+Pay,Contains payment keywords
+Crypto,Contains crypto keywords
+HasCopyrightInfo,Has copyright notice
+NoOfImage,Number of images
+NoOfCSS,Number of CSS files
+NoOfJS,Number of JavaScript files
+NoOfSelfRef,Self-references count
+NoOfEmptyRef,Empty references count
+NoOfExternalRef,External references count
+label,"Label: 0=Phishing, 1=Legitimate"
