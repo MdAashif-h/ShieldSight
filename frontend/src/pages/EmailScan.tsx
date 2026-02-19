@@ -30,3 +30,5 @@ export const EmailScan = () => {
     </div>
   );
 };
+
+export default EmailScan;
