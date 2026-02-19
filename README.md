@@ -20,8 +20,8 @@
 
 ## 🚀 Live Demo
 
-- **Frontend**: [https://sentinelx.vercel.app](https://sentinelx.vercel.app)
-- **API Documentation**: [https://api.sentinelx.tech/docs](https://api.sentinelx.tech/docs)
+- **Frontend**: [https://ShieldSight.vercel.app](https://ShieldSight.vercel.app)
+- **API Documentation**: [https://api.ShieldSight.tech/docs](https://api.ShieldSight.tech/docs)
 
 ## 🛠️ Tech Stack
 
@@ -101,4 +101,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Email**: faree.aashif@gmail.com
 
 ---
-Made with ❤️ by MdAashif-h
+Made by MdAashif-h
