@@ -20,29 +20,29 @@
 
 ## 🚀 Live Demo
 
-- **Frontend**: [https://sentinelx.vercel.app](https://sentinelx.vercel.app)
-- **API Documentation**: [https://api.sentinelx.tech/docs](https://api.sentinelx.tech/docs)
+- **Frontend**: [https://shieldsight.vercel.app](https://shieldsight.vercel.app)
+- **API Documentation**: [https://shieldsight-api.onrender.com/docs](https://shieldsight-api.onrender.com/docs)
 
 ## 🛠️ Tech Stack
 
 ### Backend
 - **Framework**: FastAPI (Python)
 - **ML Engine**: XGBoost, Scikit-learn, SHAP
-- **Data Processing**: Pandas, NumPy
-- **Deployment**: Railway / Docker
+- **Model Storage**: [HuggingFace Hub](https://huggingface.co/aashif-dev/shieldsight-models)
+- **Deployment**: Render
 
 ### Frontend
 - **Framework**: React 18 (Vite)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS, Framer Motion
-- **State Management**: Zustand / Context API
 - **Authentication**: Firebase Auth
+- **Deployment**: Vercel
 
 ## 📦 Installation & Setup
 
 ### Prerequisites
 - Python 3.9+
-- Node.js 16+
+- Node.js 18+
 - Git
 
 ### 1. Clone the Repository
@@ -62,6 +62,9 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Create .env file
+# Add HF_REPO_ID=aashif-dev/shieldsight-models
+
 # Run the server
 uvicorn app.main:app --reload
 ```
@@ -75,7 +78,8 @@ cd frontend
 npm install
 
 # Create .env file
-# Add your Firebase config keys (VITE_FIREBASE_API_KEY, etc.)
+# Add VITE_API_URL=http://localhost:8000
+# Add your Firebase config keys
 
 # Run development server
 npm run dev
@@ -101,4 +105,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Email**: faree.aashif@gmail.com
 
 ---
-Made with ❤️ by MdAashif-h
+Made with ❤️ by [MdAashif-h](https://github.com/MdAashif-h)
