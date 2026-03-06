@@ -34,6 +34,8 @@ class MLModel:
     def __init__(self):
         """Initialize model loader - loads compatible model automatically"""
         if not self._model_loaded:
+            # Ensure models directory exists
+            self.models_dir.mkdir(parents=True, exist_ok=True)
             self.load_model(mode="compatible")
 
     @property
@@ -58,18 +60,26 @@ class MLModel:
         if hf_repo_id:
             try:
                 from huggingface_hub import hf_hub_download
-                logger.info(f"Downloading {filename} from HuggingFace Hub ({hf_repo_id})...")
-                downloaded_path = hf_hub_download(
-                    repo_id=hf_repo_id,
-                    filename=filename,
-                    cache_dir=str(self.models_dir / ".hf_cache"),
-                    local_dir=str(self.models_dir),
-                    local_dir_use_symlinks=False,
-                )
-                logger.info(f"Downloaded {filename} successfully")
-                return Path(downloaded_path)
+                logger.debug(f"HF Hub Check: filename={filename}, repo={hf_repo_id}")
+                
+                # Check for existing download in .hf_cache first?
+                # Actually, hf_hub_download handles this, but let's be explicit
+                try:
+                    downloaded_path = hf_hub_download(
+                        repo_id=hf_repo_id,
+                        filename=filename,
+                        cache_dir=str(self.models_dir / ".hf_cache"),
+                        local_dir=str(self.models_dir),
+                        # Note: local_dir_use_symlinks is deprecated but we keep it False for compatibility with some environments
+                    )
+                    logger.info(f"Successfully ensured {filename} from HF Hub")
+                    return Path(downloaded_path)
+                except Exception as inner_e:
+                    logger.warning(f"Individual HF download failed for {filename}: {inner_e}")
+            except ImportError:
+                logger.error("huggingface-hub for model download is not installed!")
             except Exception as e:
-                logger.warning(f"HuggingFace download failed for {filename}: {e}")
+                logger.warning(f"HuggingFace Hub logic error for {filename}: {e}")
 
         # 3) File not found anywhere
         return local_path  # will be checked by caller with .exists()

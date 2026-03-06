@@ -12,6 +12,6 @@ services:
       - key: LOG_LEVEL
         value: "INFO"
       - key: HF_REPO_ID
-        value: "shieldsight/models"
+        value: "aashif-dev/shieldsight-models"
     healthCheckPath: /health
     plan: free

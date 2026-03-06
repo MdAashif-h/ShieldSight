@@ -99,11 +99,15 @@ async def lifespan(app: FastAPI):
 
     if not ml_model.is_loaded():
         try:
-            ml_model.load_model()
-            logger.info("ML model loaded successfully")
+            success = ml_model.load_model()
+            if success:
+                logger.info("ML model loaded successfully")
+            else:
+                logger.error("ML model failed to load (files might be missing or corrupted)")
         except Exception as e:
-            logger.error(f"Failed to load ML model: {e}")
-            raise
+            logger.error(f"Critical error during ML model startup: {e}")
+            # We don't necessarily want to crash the whole API if the model fails
+            # because the rule-based fallback can still work.
 
     logger.info("API docs: /docs | /redoc")
     logger.info("Health: /health | Metrics: /metrics")
