@@ -46,7 +46,7 @@
    | **Name** | `shieldsight-api` |
    | **Root Directory** | `backend` |
    | **Runtime** | `Python 3` |
-   | **Build Command** | `pip install -r requirements.txt` |
+   | **Build Command** | `python -m pip install --upgrade pip setuptools wheel && pip install -r requirements.txt` |
    | **Start Command** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
    | **Plan** | `Free` |
 5. Add **Environment Variables** in Render dashboard:
@@ -54,7 +54,8 @@
    |---|---|
    | `PORT` | `10000` |
    | `LOG_LEVEL` | `INFO` |
-   | `HF_REPO_ID` | `YourUsername/shieldsight-models` ← from Step 1 |
+   | **PYTHON_VERSION** | `3.11.7` |
+   | **HF_REPO_ID** | `YourUsername/shieldsight-models` ← from Step 1 |
    | `SMTP_HOST` | `smtp.gmail.com` |
    | `SMTP_PORT` | `587` |
    | `SMTP_USER` | `shieldsight.off@gmail.com` |
