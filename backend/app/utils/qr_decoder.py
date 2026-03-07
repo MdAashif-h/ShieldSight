@@ -9,9 +9,10 @@ try:
     from PIL import Image
     from pyzbar import pyzbar
     QR_ENABLED = True
-except ImportError:
+except Exception as e:
     QR_ENABLED = False
-    logger.warning("QR decoding libraries (cv2, pyzbar) not found. QR features will be disabled.")
+    # Use a basic logger check since logger might not be defined yet in some import orders
+    print(f"WARNING: QR decoding disabled due to missing libraries or system dependencies: {e}")
     # Define stubs so code doesn't crash on name lookup
     cv2 = None
     np = None
