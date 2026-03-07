@@ -3,10 +3,21 @@ QR Code Decoder Utility
 Extracts URLs from QR code images
 """
 
-import cv2
-import numpy as np
-from PIL import Image
-from pyzbar import pyzbar
+try:
+    import cv2
+    import numpy as np
+    from PIL import Image
+    from pyzbar import pyzbar
+    QR_ENABLED = True
+except ImportError:
+    QR_ENABLED = False
+    logger.warning("QR decoding libraries (cv2, pyzbar) not found. QR features will be disabled.")
+    # Define stubs so code doesn't crash on name lookup
+    cv2 = None
+    np = None
+    Image = None
+    pyzbar = None
+
 from typing import List, Dict, Optional, Tuple
 import logging
 import base64
@@ -95,13 +106,11 @@ class QRDecoder:
     def decode_from_base64(base64_image: str) -> List[Dict]:
         """
         Decode QR codes from base64 image string
-        
-        Args:
-            base64_image: Base64 encoded image (with or without prefix)
-            
-        Returns:
-            List of decoded QR codes with URLs and metadata
         """
+        if not QR_ENABLED:
+            logger.warning("QR Decoding requested but libraries are not installed.")
+            return []
+
         try:
             # Remove data URL prefix if present
             if 'base64,' in base64_image:
