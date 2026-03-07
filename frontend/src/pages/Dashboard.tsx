@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, Suspense, lazy } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Shield,

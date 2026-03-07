@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { Sliders, Download, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { useSettingsStore } from '../../stores/settingsStore';
-import { Button } from '../ui/Button';
 import toast from 'react-hot-toast';
 
 export const PreferenceSettings = () => {
@@ -105,9 +104,8 @@ export const PreferenceSettings = () => {
           </div>
           <button
             onClick={() => handleChange('autoExport', !preferences.autoExport)}
-            className={`relative w-12 h-6 rounded-full transition-colors ${
-              preferences.autoExport ? 'bg-primary' : 'bg-muted'
-            }`}
+            className={`relative w-12 h-6 rounded-full transition-colors ${preferences.autoExport ? 'bg-primary' : 'bg-muted'
+              }`}
           >
             <motion.div
               animate={{ x: preferences.autoExport ? 24 : 0 }}

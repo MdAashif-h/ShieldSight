@@ -124,8 +124,8 @@ export const PredictionResult = ({
   const summaryText = typeof summary === 'string' ? summary : null;
 
   const isPhishing =
-    summaryObj?.verdict?.toLowerCase().includes('phishing') ?? 
-    prediction?.toLowerCase().includes('phishing') ?? 
+    summaryObj?.verdict?.toLowerCase().includes('phishing') ??
+    prediction?.toLowerCase().includes('phishing') ??
     false;
 
   const hasRiskFactors = summaryObj && summaryObj.risk_factors?.length > 0;
@@ -133,7 +133,7 @@ export const PredictionResult = ({
 
   const getStatusText = (statusCode?: number): string => {
     if (!statusCode) return '';
-    
+
     if (statusCode >= 200 && statusCode < 300) return 'OK';
     if (statusCode >= 300 && statusCode < 400) return 'Redirect';
     if (statusCode >= 400 && statusCode < 500) return 'Client Error';
@@ -225,7 +225,7 @@ export const PredictionResult = ({
                 <FileText className="w-5 h-5 text-primary" />
                 Analysis Summary
               </h3>
-              
+
               <div className="prose dark:prose-invert max-w-none">
                 <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground font-sans">
                   {summaryText}
@@ -246,10 +246,10 @@ export const PredictionResult = ({
           <Card className={cn(
             "glass border",
             websiteStatus?.is_accessible === true
-              ? "border-green-500/30 bg-green-500/5" 
+              ? "border-green-500/30 bg-green-500/5"
               : websiteStatus?.is_accessible === false
-              ? "border-red-500/30 bg-red-500/5"
-              : "border-gray-500/30 bg-gray-500/5"
+                ? "border-red-500/30 bg-red-500/5"
+                : "border-gray-500/30 bg-gray-500/5"
           )}>
             <CardContent className="p-6 space-y-4">
               <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ export const PredictionResult = ({
                     <CheckCircle className="w-5 h-5" />
                     <span className="font-semibold">Website is ONLINE</span>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-3">
                     {websiteStatus?.response_time_ms && (
                       <div className="p-3 rounded-lg bg-muted/50">
@@ -273,7 +273,7 @@ export const PredictionResult = ({
                         <p className="text-sm font-semibold">{websiteStatus.response_time_ms}ms</p>
                       </div>
                     )}
-                    
+
                     {websiteStatus?.status_code && (
                       <div className="p-3 rounded-lg bg-muted/50">
                         <span className="text-xs text-muted-foreground block mb-1">HTTP Status</span>
@@ -283,7 +283,7 @@ export const PredictionResult = ({
                       </div>
                     )}
                   </div>
-                  
+
                   {websiteStatus?.ssl_valid !== undefined && (
                     websiteStatus.ssl_valid ? (
                       <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
@@ -297,7 +297,7 @@ export const PredictionResult = ({
                       </div>
                     )
                   )}
-                  
+
                   {websiteStatus?.has_redirects && websiteStatus?.final_url && (
                     <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                       <div className="flex items-start gap-2">
@@ -332,7 +332,7 @@ export const PredictionResult = ({
                     <XCircle className="w-5 h-5" />
                     <span className="font-semibold">Website is OFFLINE or UNREACHABLE</span>
                   </div>
-                  
+
                   {websiteStatus?.error_message && (
                     <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
                       <p className="text-sm text-red-600 dark:text-red-400">
@@ -340,7 +340,7 @@ export const PredictionResult = ({
                       </p>
                     </div>
                   )}
-                  
+
                   <div className="p-4 rounded-lg bg-muted/50 border border-border">
                     <p className="text-sm font-semibold text-foreground mb-2">
                       ⚠️ This could indicate:
@@ -372,10 +372,10 @@ export const PredictionResult = ({
       {threat_index !== undefined && (
         <ThreatDashboard
           threatIndex={threat_index}
-          threatLevel={threat_level}
+          threatLevel={threat_level || "Unknown"}
           breakdown={threat_breakdown}
-          timeline={explainability_timeline}
-          attackType={attack_type}
+          timeline={explainability_timeline || {}}
+          attackType={attack_type || "Unknown"}
           modelReliability={model_reliability}
         />
       )}

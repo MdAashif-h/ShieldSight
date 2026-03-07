@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion } from 'framer-motion';
-import { Upload, File, X, AlertCircle } from 'lucide-react';
+import { Upload, File, AlertCircle } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
@@ -50,9 +50,9 @@ export const FileUpload = ({ onFileSelect, disabled = false }: FileUploadProps) 
 
       // Handle CSV format (could be comma-separated with other columns)
       const parts = line.split(',').map(p => p.trim().replace(/['"]/g, ''));
-      
+
       // Find the URL in the line (first column that looks like a URL)
-      const url = parts.find(part => 
+      const url = parts.find(part =>
         part.startsWith('http://') || part.startsWith('https://')
       ) || parts[0];
 

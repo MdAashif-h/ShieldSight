@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { Loader2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { cn } from '../../lib/utils';
 
 interface BatchProgressProps {
   total: number;

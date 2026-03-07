@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Shield, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface RiskIndicatorProps {
@@ -8,13 +8,13 @@ interface RiskIndicatorProps {
   riskLevel?: 'low' | 'medium' | 'high' | 'very_low' | 'caution' | 'warning' | 'critical';  // ✅ FIXED: Made optional + added more types
 }
 
-export const RiskIndicator = ({ 
-  prediction, 
-  confidence, 
+export const RiskIndicator = ({
+  prediction,
+  confidence,
   riskLevel = 'medium'  // ✅ FIXED: Added default value
 }: RiskIndicatorProps) => {
   const isPhishing = prediction === 'phishing';
-  
+
   const config = {
     phishing: {
       icon: AlertTriangle,
@@ -152,8 +152,8 @@ export const RiskIndicator = ({
           transition={{ delay: 0.3 }}
           className={cn(
             'p-4 rounded-lg border',
-            isPhishing 
-              ? 'bg-red-500/5 border-red-500/20' 
+            isPhishing
+              ? 'bg-red-500/5 border-red-500/20'
               : 'bg-green-500/5 border-green-500/20'
           )}
         >
