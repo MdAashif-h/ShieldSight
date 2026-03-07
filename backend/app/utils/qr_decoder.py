@@ -7,17 +7,13 @@ try:
     import cv2
     import numpy as np
     from PIL import Image
-    from pyzbar import pyzbar
     QR_ENABLED = True
 except Exception as e:
     QR_ENABLED = False
-    # Use a basic logger check since logger might not be defined yet in some import orders
-    print(f"WARNING: QR decoding disabled due to missing libraries or system dependencies: {e}")
-    # Define stubs so code doesn't crash on name lookup
+    print(f"WARNING: QR decoding engine (OpenCV) initialization failure: {e}")
     cv2 = None
     np = None
     Image = None
-    pyzbar = None
 
 from typing import List, Dict, Optional, Tuple
 import logging
@@ -77,39 +73,33 @@ class QRDecoder:
             return url, []
     
     @staticmethod
-    def _calculate_quality(obj) -> str:
-        """
-        Calculate QR code quality based on size and detectability
-        pyzbar doesn't consistently expose .quality attribute
-        """
-        try:
-            # Try to use quality if available
-            if hasattr(obj, 'quality') and obj.quality is not None:
-                if obj.quality > 50:
-                    return 'high'
-                elif obj.quality > 20:
-                    return 'medium'
-                else:
-                    return 'low'
-        except:
-            pass
-        
-        # Fallback: use size as quality indicator
-        size = obj.rect.width * obj.rect.height
-        if size > 10000:  # Large QR = high quality
-            return 'high'
-        elif size > 3000:
-            return 'medium'
-        else:
+    def _calculate_quality_cv(bbox) -> str:
+        """Calculate quality based on OpenCV bbox size"""
+        if bbox is None or len(bbox) == 0:
             return 'low'
+        
+        try:
+            # bbox usually (4, 2) for a single QR in the multi zip
+            points = np.array(bbox, dtype=np.float32)
+            width = np.linalg.norm(points[0] - points[1])
+            height = np.linalg.norm(points[1] - points[2])
+            size = width * height
+            
+            if size > 10000:
+                return 'high'
+            elif size > 3000:
+                return 'medium'
+            return 'low'
+        except:
+            return 'medium'
     
     @staticmethod
     def decode_from_base64(base64_image: str) -> List[Dict]:
         """
-        Decode QR codes from base64 image string
+        Decode QR codes from base64 image string using OpenCV
         """
         if not QR_ENABLED:
-            logger.warning("QR Decoding requested but libraries are not installed.")
+            logger.warning("QR Decoding requested but OpenCV initialization failed.")
             return []
 
         try:
@@ -121,46 +111,52 @@ class QRDecoder:
             image_data = base64.b64decode(base64_image)
             image = Image.open(io.BytesIO(image_data))
             
-            # Convert to numpy array
-            img_array = np.array(image)
+            # Convert to OpenCV BGR format
+            img_rgb = np.array(image.convert('RGB'))
+            img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
             
-            # Convert to grayscale if needed
-            if len(img_array.shape) == 3:
-                img_gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
-            else:
-                img_gray = img_array
-            
-            # Decode QR codes
-            decoded_objects = pyzbar.decode(img_gray)
+            # Use OpenCV QRCodeDetector
+            detector = cv2.QRCodeDetector()
+            success, decoded_info, points, _ = detector.detectAndDecodeMulti(img_bgr)
             
             results = []
-            for obj in decoded_objects:
-                data = obj.data.decode('utf-8')
-                
-                # Check if it's a URL
-                if data.startswith(('http://', 'https://', 'www.')):
+            if success:
+                for data, bbox in zip(decoded_info, points):
+                    if not data:
+                        continue
+                        
+                    # Clean/Format data
+                    data = data.strip()
+                    if not data.startswith(('http://', 'https://', 'www.')):
+                        # Only take URLs
+                        continue
+                    
+                    # Calculate bounding rect
+                    x_min = int(np.min(bbox[:, 0]))
+                    y_min = int(np.min(bbox[:, 1]))
+                    width = int(np.max(bbox[:, 0]) - x_min)
+                    height = int(np.max(bbox[:, 1]) - y_min)
+                    
                     results.append({
                         'data': data,
-                        'type': obj.type,
-                        'quality': QRDecoder._calculate_quality(obj),
+                        'type': 'QRCODE',
+                        'quality': QRDecoder._calculate_quality_cv(bbox),
                         'rect': {
-                            'x': obj.rect.left,
-                            'y': obj.rect.top,
-                            'width': obj.rect.width,
-                            'height': obj.rect.height
+                            'x': x_min,
+                            'y': y_min,
+                            'width': width,
+                            'height': height
                         }
                     })
-                else:
-                    logger.warning(f"QR code contains non-URL data: {data[:50]}")
             
             if not results:
-                logger.warning("No URLs found in QR code(s)")
+                logger.info("No URL QR codes found in image")
                 
             return results
             
         except Exception as e:
             logger.error(f"QR decoding error: {str(e)}")
-            raise ValueError(f"Failed to decode QR code: {str(e)}")
+            return []
     
     @staticmethod
     def validate_qr_image(image_data: bytes) -> bool:
