@@ -93,6 +93,13 @@ npm run dev
 ```
 The app will be available at `http://localhost:5173`.
 
+### 4. Chrome Extension Setup (Free Manual Install)
+1. Open Google Chrome and navigate to `chrome://extensions/`.
+2. Enable **Developer mode** using the toggle in the top-right corner.
+3. Click the **Load unpacked** button.
+4. Navigate to your local `ShieldSight` folder and select the `chrome-extension` directory.
+5. The ShieldSight icon will now appear in your extension bar!
+
 ## 📊 Model Performance
 
 Evaluated on the **PhiUSIIL** and **Alexa Top-1M** datasets:
