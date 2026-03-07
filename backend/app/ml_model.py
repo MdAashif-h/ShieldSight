@@ -32,11 +32,8 @@ class MLModel:
         return cls._instance
 
     def __init__(self):
-        """Initialize model loader - loads compatible model automatically"""
-        if not self._model_loaded:
-            # Ensure models directory exists
-            self.models_dir.mkdir(parents=True, exist_ok=True)
-            self.load_model(mode="compatible")
+        """Initialize model loader - directory will be ensured on load_model"""
+        pass
 
     @property
     def models_dir(self) -> Path:
@@ -87,6 +84,8 @@ class MLModel:
     def load_model(self, mode: str = "compatible") -> bool:
         """Load XGBoost model and feature names"""
         try:
+            # Ensure models directory exists before loading
+            self.models_dir.mkdir(parents=True, exist_ok=True)
             self._reset_state()
             
             MODEL_MAP = {
