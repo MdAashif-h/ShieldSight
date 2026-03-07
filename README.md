@@ -18,25 +18,43 @@
 - **📱 Mobile Optimized**: Fully functional on mobile devices with camera-based QR scanning.
 - **🔐 Secure Architecture**: Firebase Authentication and encrypted data handling.
 
-## 🚀 Live Demo
+## 🌐 Live Demo
 
-- **Frontend**: [https://shieldsight.vercel.app](https://shieldsight.vercel.app)
-- **API Documentation**: [https://shieldsight-api.onrender.com/docs](https://shieldsight-api.onrender.com/docs)
+- **Main Dashboard**: [shieldsight.vercel.app](https://shieldsight.vercel.app)
+- **Direct Link**: [Scan URLs Now](https://shieldsight.vercel.app/analyze)
+- **API Health**: [Backend Status](https://shieldsight-gsnq.onrender.com/health)
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    User([User / Browser])
+    Vercel[Vercel - React Frontend]
+    Render[Render - FastAPI Backend]
+    HF[HuggingFace - ML Model Storage]
+    Firebase[Firebase - Auth & Store]
+    Cron[Cron-job.org - Keep-Alive]
+
+    User <--> Vercel
+    Vercel <--> Render
+    Render <--> HF
+    Vercel <--> Firebase
+    Cron -. Ping .-> Render
+```
 
 ## 🛠️ Tech Stack
 
-### Backend
-- **Framework**: FastAPI (Python)
-- **ML Engine**: XGBoost, Scikit-learn, SHAP
-- **Model Storage**: [HuggingFace Hub](https://huggingface.co/aashif-dev/shieldsight-models)
-- **Deployment**: Render
+### Core Technologies
+- **Frontend**: [React 19](https://react.dev), [Vite](https://vitejs.dev), [TypeScript](https://www.typescriptlang.org)
+- **Backend**: [FastAPI](https://fastapi.tiangolo.com) (Python 3.11)
+- **Machine Learning**: [XGBoost](https://xgboost.readthedocs.io), [SHAP](https://shap.readthedocs.io), [Scikit-learn](https://scikit-learn.org)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com), [Framer Motion](https://www.framer.com/motion)
 
-### Frontend
-- **Framework**: React 18 (Vite)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS, Framer Motion
-- **Authentication**: Firebase Auth
-- **Deployment**: Vercel
+### Service Infrastructure
+- **Model Hosting**: [HuggingFace Hub](https://huggingface.co/aashif-dev/shieldsight-models)
+- **Authentication**: [Firebase Auth](https://firebase.google.com/docs/auth)
+- **Cloud Hosting**: [Vercel](https://vercel.com) (Frontend), [Render](https://render.com) (Backend)
+- **Maintenance**: [Cron-job.org](https://cron-job.org)
 
 ## 📦 Installation & Setup
 
@@ -105,4 +123,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Email**: faree.aashif@gmail.com
 
 ---
-Made with ❤️ by [MdAashif-h](https://github.com/MdAashif-h)
+Made by [MdAashif-h](https://github.com/MdAashif-h)
