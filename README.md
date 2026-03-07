@@ -21,26 +21,15 @@
 ## 🌐 Live Demo
 
 - **Main Dashboard**: [shieldsight.vercel.app](https://shieldsight.vercel.app)
-- **Direct Link**: [Scan URLs Now](https://shieldsight.vercel.app/analyze)
-- **API Health**: [Backend Status](https://shieldsight-gsnq.onrender.com/health)
+- **Backend Status**: [FastAPI Health Check](https://shieldsight-gsnq.onrender.com/health)
 
 ## 🏗️ System Architecture
 
-```mermaid
-graph TD
-    User([User / Browser])
-    Vercel[Vercel - React Frontend]
-    Render[Render - FastAPI Backend]
-    HF[HuggingFace - ML Model Storage]
-    Firebase[Firebase - Auth & Store]
-    Cron[Cron-job.org - Keep-Alive]
-
-    User <--> Vercel
-    Vercel <--> Render
-    Render <--> HF
-    Vercel <--> Firebase
-    Cron -. Ping .-> Render
-```
+- **Frontend**: [React 19](https://react.dev) + [TypeScript](https://www.typescriptlang.org) hosted on **Vercel**.
+- **Backend**: [FastAPI](https://fastapi.tiangolo.com) hosted on **Render**.
+- **Machine Learning**: [XGBoost](https://xgboost.readthedocs.io) models hosted on **HuggingFace Hub**.
+- **Authentication**: [Firebase Auth](https://firebase.google.com/docs/auth) for secure user sessions.
+- **Observability**: [Cron-job.org](https://cron-job.org) ensures the backend stays awake for instant analysis.
 
 ## 🛠️ Tech Stack
 
