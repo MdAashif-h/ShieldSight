@@ -10,7 +10,7 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
-import { showToast } from '../components/ui/Toast';  // ✅ CHANGED
+import { showToast } from '../components/ui/Toast';
 
 interface AuthState {
   user: User | null;
@@ -31,93 +31,109 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       loading: true,
       error: null,
       lastUpdated: Date.now(),
 
       signup: async (email, password, displayName) => {
+        if (!auth) {
+          showToast('error', 'Firebase not configured. Please check Vercel environment variables.');
+          return;
+        }
         try {
           set({ loading: true, error: null });
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(userCredential.user, { displayName });
           set({ user: userCredential.user, loading: false });
-          showToast('success', 'Account created successfully!');  // ✅ CHANGED
+          showToast('success', 'Account created successfully!');
         } catch (error: any) {
           set({ error: error.message, loading: false });
-          showToast('error', error.message);  // ✅ CHANGED
+          showToast('error', error.message);
           throw error;
         }
       },
 
       login: async (email, password) => {
+        if (!auth) {
+          showToast('error', 'Firebase not configured. Please check Vercel environment variables.');
+          return;
+        }
         try {
           set({ loading: true, error: null });
           const userCredential = await signInWithEmailAndPassword(auth, email, password);
           set({ user: userCredential.user, loading: false });
-          showToast('success', 'Welcome back!');  // ✅ CHANGED
+          showToast('success', 'Welcome back!');
         } catch (error: any) {
           set({ error: error.message, loading: false });
-          showToast('error', 'Invalid email or password');  // ✅ CHANGED
+          showToast('error', 'Invalid email or password');
           throw error;
         }
       },
 
       logout: async () => {
+        if (!auth) {
+          set({ user: null, loading: false });
+          return;
+        }
         try {
           await signOut(auth);
           set({ user: null, loading: false });
-          showToast('success', 'Logged out successfully');  // ✅ CHANGED
+          showToast('success', 'Logged out successfully');
         } catch (error: any) {
-          showToast('error', 'Logout failed');  // ✅ CHANGED
+          showToast('error', 'Logout failed');
           throw error;
         }
       },
 
       resetPassword: async (email) => {
+        if (!auth) {
+          showToast('error', 'Firebase not configured.');
+          return;
+        }
         try {
           await sendPasswordResetEmail(auth, email);
-          showToast('success', 'Password reset email sent!');  // ✅ CHANGED
+          showToast('success', 'Password reset email sent!');
         } catch (error: any) {
-          showToast('error', 'Failed to send reset email');  // ✅ CHANGED
+          showToast('error', 'Failed to send reset email');
           throw error;
         }
       },
 
       updateUserProfile: async (displayName, photoURL) => {
+        if (!auth || !auth.currentUser) {
+          showToast('error', 'User not authenticated or Firebase missing.');
+          return;
+        }
         try {
-          if (auth.currentUser) {
-            // Explicitly handle removal: '' or null means set to null
-            const isRemoving = photoURL === '' || photoURL === null;
-            const newPhotoURL = isRemoving ? null : (photoURL || auth.currentUser.photoURL);
-            const newDisplayName = displayName !== undefined ? (displayName || auth.currentUser.displayName) : auth.currentUser.displayName;
+          // Explicitly handle removal: '' or null means set to null
+          const isRemoving = photoURL === '' || photoURL === null;
+          const newPhotoURL = isRemoving ? null : (photoURL || auth.currentUser.photoURL);
+          const newDisplayName = displayName !== undefined ? (displayName || auth.currentUser.displayName) : auth.currentUser.displayName;
 
-            await updateProfile(auth.currentUser, {
-              displayName: newDisplayName || undefined,
-              photoURL: newPhotoURL
-            });
+          await updateProfile(auth.currentUser, {
+            displayName: newDisplayName || undefined,
+            photoURL: newPhotoURL
+          });
 
-            await auth.currentUser.reload();
+          await auth.currentUser.reload();
 
-            // Critical: create a shallow copy and explicitly override photoURL 
-            // since it might be a non-enumerable getter in the Firebase User object.
-            const updatedUser = {
-              ...auth.currentUser,
-              photoURL: newPhotoURL,
-              displayName: newDisplayName || auth.currentUser.displayName
-            };
+          const updatedUser = {
+            ...auth.currentUser,
+            photoURL: newPhotoURL,
+            displayName: newDisplayName || auth.currentUser.displayName
+          };
 
-            set({
-              user: updatedUser as User,
-              lastUpdated: Date.now(),
-              loading: false
-            });
+          set({
+            user: updatedUser as User,
+            lastUpdated: Date.now(),
+            loading: false
+          });
 
-            showToast('success', 'Profile updated!');
-          }
+          showToast('success', 'Profile updated!');
         } catch (error: any) {
-          showToast('error', 'Failed to update profile');  // ✅ CHANGED
+          showToast('error', 'Failed to update profile');
           throw error;
         }
       },
