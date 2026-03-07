@@ -133,7 +133,12 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Initialize auth listener
-onAuthStateChanged(auth, (user) => {
-  useAuthStore.getState().setUser(user);
-});
+// Initialize auth listener if auth is available
+if (auth && typeof onAuthStateChanged === 'function') {
+  onAuthStateChanged(auth, (user) => {
+    useAuthStore.getState().setUser(user);
+  });
+} else {
+  // If no auth, set loading to false to allow app to render landing page
+  useAuthStore.getState().setLoading(false);
+}
