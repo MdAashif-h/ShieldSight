@@ -37,35 +37,71 @@ class GeoProxyChecker:
     
     @staticmethod
     async def check_ip_geolocation(url: str) -> Dict:
-        """Get IP geolocation using GeoJS API"""
+        """Get IP geolocation with fallback and diagnostic prints"""
         try:
             parsed = urlparse(url)
             domain = parsed.netloc or parsed.path
             domain = domain.split(':')[0]
             
+            print(f"--- DEBUG GEO START: {domain} ---")
+            
             # Resolve domain to IP first
-            ip = socket.gethostbyname(domain)
+            try:
+                ip = socket.gethostbyname(domain)
+                print(f"Resolved {domain} to {ip}")
+            except Exception as e:
+                print(f"DNS Resolution failed for {domain}: {e}")
+                return {'ip': None, 'country': 'Unknown', 'error': f'DNS failure: {e}'}
             
-            # Simple synchronous requests call for reliability within the async wrapper
-            response = requests.get(f'https://get.geojs.io/v1/ip/geo/{ip}.json', timeout=5)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get('country'):
-                    return {
-                        'ip': data.get('ip', 'Unknown'),
-                        'country': data.get('country', 'Unknown'),
-                        'country_code': data.get('country_code', ''),
-                        'region': data.get('region', 'Unknown'),
-                        'city': data.get('city', 'Unknown'),
-                        'isp': data.get('organization_name') or data.get('organization', 'Unknown'),
-                        'timezone': data.get('timezone', 'Unknown'),
-                        'is_proxy': False,
-                        'is_hosting': False,
-                    }
+            # Try GeoJS First
+            try:
+                print(f"Querying GeoJS for {ip}...")
+                response = requests.get(f'https://get.geojs.io/v1/ip/geo/{ip}.json', timeout=5)
+                if response.status_code == 200:
+                    data = response.json()
+                    print(f"GeoJS Result: {data.get('country')}")
+                    if data.get('country'):
+                        return {
+                            'ip': data.get('ip', ip),
+                            'country': data.get('country', 'Unknown'),
+                            'country_code': data.get('country_code', ''),
+                            'region': data.get('region', 'Unknown'),
+                            'city': data.get('city', 'Unknown'),
+                            'isp': data.get('organization_name') or data.get('organization', 'Unknown'),
+                            'timezone': data.get('timezone', 'Unknown'),
+                            'is_proxy': False,
+                            'is_hosting': False,
+                        }
+            except Exception as geojs_err:
+                print(f"GeoJS query failed: {geojs_err}")
+
+            # Fallback to ip-api.com
+            try:
+                print(f"Querying ip-api.com for {ip}...")
+                response = requests.get(f'http://ip-api.com/json/{ip}', timeout=5)
+                if response.status_code == 200:
+                    data = response.json()
+                    print(f"ip-api Result: {data.get('country')}")
+                    if data.get('status') == 'success':
+                        return {
+                            'ip': data.get('query', ip),
+                            'country': data.get('country', 'Unknown'),
+                            'country_code': data.get('countryCode', ''),
+                            'region': data.get('regionName', 'Unknown'),
+                            'city': data.get('city', 'Unknown'),
+                            'isp': data.get('isp', 'Unknown'),
+                            'timezone': data.get('timezone', 'Unknown'),
+                            'is_proxy': False,
+                            'is_hosting': False,
+                        }
+            except Exception as ipapi_err:
+                print(f"ip-api query failed: {ipapi_err}")
+
         except Exception as e:
+            print(f"Critical Geolocation failure: {e}")
             logger.warning(f"Geolocation check failed: {e}")
         
+        print("--- DEBUG GEO END: FAILED ---")
         return {
             'ip': None,
             'country': 'Unknown',
@@ -83,7 +119,8 @@ class GeoProxyChecker:
             blocked_in = []
             for country, blocked_list in GeoProxyChecker.BLOCKED_DOMAINS.items():
                 for blocked_domain in blocked_list:
-                    if blocked_domain in base_domain or base_domain.endswith(blocked_domain):
+                    # Precise matching to avoid '.com' matching 'leetcode.com'
+                    if base_domain == blocked_domain or base_domain.endswith('.' + blocked_domain):
                         blocked_in.append({
                             'country': country,
                             'reason': GeoProxyChecker._get_block_reason(country, base_domain)
