@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 import os
 import uuid
 from datetime import datetime
@@ -10,7 +10,7 @@ if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/upload-avatar")
-async def upload_avatar(file: UploadFile = File(...)):
+async def upload_avatar(request: Request, file: UploadFile = File(...)):
     # Validate file type
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
@@ -28,9 +28,9 @@ async def upload_avatar(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
     
-    # Return the URL (assuming backend runs on port 8000)
-    # In production, this should use the actual domain
-    avatar_url = f"http://localhost:8000/uploads/avatars/{filename}"
+    # Return the dynamic URL using current request base
+    base_url = str(request.base_url).rstrip('/')
+    avatar_url = f"{base_url}/uploads/avatars/{filename}"
     
     return {
         "url": avatar_url,

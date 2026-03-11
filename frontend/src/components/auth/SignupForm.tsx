@@ -7,12 +7,13 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
 import { showToast } from '../ui/Toast';
+import { Modal } from '../ui/Modal';
 
 
 export const SignupForm = () => {
   const navigate = useNavigate();
   const { signup, loading } = useAuthStore();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -21,6 +22,7 @@ export const SignupForm = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [activeModal, setActiveModal] = useState<'terms' | 'privacy' | null>(null);
 
   // Password strength indicator
   const getPasswordStrength = (password: string) => {
@@ -38,7 +40,7 @@ export const SignupForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       showToast('error', 'Passwords do not match!');
       return;
@@ -127,7 +129,7 @@ export const SignupForm = () => {
                   type="text"
                   placeholder="John Doe"
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="pl-10"
                   required
                 />
@@ -145,7 +147,7 @@ export const SignupForm = () => {
                   type="email"
                   placeholder="you@example.com"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="pl-10"
                   required
                 />
@@ -163,7 +165,7 @@ export const SignupForm = () => {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="pl-10 pr-10"
                   required
                 />
@@ -175,7 +177,7 @@ export const SignupForm = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              
+
               {/* Password Strength Indicator */}
               {formData.password && (
                 <motion.div
@@ -187,9 +189,8 @@ export const SignupForm = () => {
                     {[0, 1, 2, 3].map((index) => (
                       <div
                         key={index}
-                        className={`h-1 flex-1 rounded-full transition-colors ${
-                          index < passwordStrength ? strengthColors[passwordStrength - 1] : 'bg-gray-200 dark:bg-gray-700'
-                        }`}
+                        className={`h-1 flex-1 rounded-full transition-colors ${index < passwordStrength ? strengthColors[passwordStrength - 1] : 'bg-gray-200 dark:bg-gray-700'
+                          }`}
                       />
                     ))}
                   </div>
@@ -211,7 +212,7 @@ export const SignupForm = () => {
                   type="password"
                   placeholder="••••••••"
                   value={formData.confirmPassword}
-                  onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   className="pl-10"
                   required
                 />
@@ -231,13 +232,21 @@ export const SignupForm = () => {
               />
               <label className="text-sm text-muted-foreground">
                 I agree to the{' '}
-                <Link to="/terms" className="text-primary hover:underline">
+                <button
+                  type="button"
+                  onClick={() => setActiveModal('terms')}
+                  className="text-primary hover:underline font-medium focus:outline-none"
+                >
                   Terms of Service
-                </Link>{' '}
+                </button>{' '}
                 and{' '}
-                <Link to="/privacy" className="text-primary hover:underline">
+                <button
+                  type="button"
+                  onClick={() => setActiveModal('privacy')}
+                  className="text-primary hover:underline font-medium focus:outline-none"
+                >
                   Privacy Policy
-                </Link>
+                </button>
               </label>
             </div>
 
@@ -288,6 +297,40 @@ export const SignupForm = () => {
           Protected by ShieldSight © 2026
         </p>
       </motion.div>
+
+      {/* Terms & Privacy Modals */}
+      <Modal
+        isOpen={activeModal === 'terms'}
+        onClose={() => setActiveModal(null)}
+        title="Terms of Service"
+      >
+        <div className="space-y-4">
+          <p className="font-bold">Last Updated: March 2026</p>
+          <p>By using ShieldSight, you agree to the following terms:</p>
+          <h3 className="font-semibold">1. Service Description</h3>
+          <p>ShieldSight provides AI-powered phishing detection and URL analysis services. While we strive for 100% accuracy, our reports are for informational purposes only.</p>
+          <h3 className="font-semibold">2. User Conduct</h3>
+          <p>You agree not to use ShieldSight for any illegal activities or to attempt to probe or scan our systems.</p>
+          <h3 className="font-semibold">3. Limitation of Liability</h3>
+          <p>ShieldSight developers are not liable for any damages resulting from reliance on our phishing detection results.</p>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={activeModal === 'privacy'}
+        onClose={() => setActiveModal(null)}
+        title="Privacy Policy"
+      >
+        <div className="space-y-4">
+          <p className="font-bold">Last Updated: March 2026</p>
+          <h3 className="font-semibold">1. Data Collection</h3>
+          <p>We collectURLs analyzed to improve our detection algorithms. We do not sell your personal data.</p>
+          <h3 className="font-semibold">2. Authentication</h3>
+          <p>We use Firebase for secure authentication. Your account information is protected.</p>
+          <h3 className="font-semibold">3. Tracking</h3>
+          <p>We use minimal tracking tokens to maintain your session.</p>
+        </div>
+      </Modal>
     </div>
   );
 };

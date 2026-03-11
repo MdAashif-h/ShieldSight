@@ -7,7 +7,7 @@ import { showToast } from '../ui/Toast';
 import { useHistoryStore } from '../../stores/historyStore';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL;
 
 interface DocumentResult {
   file_name: string;
@@ -168,8 +168,8 @@ export const DocumentScanner = () => {
             onDragOver={handleDrag}
             onDrop={handleDrop}
             className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${dragActive
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
-                : 'border-border hover:border-blue-400'
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+              : 'border-border hover:border-blue-400'
               }`}
           >
             <Upload className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
