@@ -1,7 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 import os
 import uuid
-import httpx
+import base64
+import requests # Using requests instead of httpx for simpler multipart
 from datetime import datetime
 
 router = APIRouter(prefix="/user", tags=["User"])
@@ -18,26 +19,25 @@ async def upload_avatar(request: Request, file: UploadFile = File(...)):
     try:
         content = await file.read()
         
-        # Upload to ImgBB
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://api.imgbb.com/1/upload",
-                data={
-                    "key": IMGBB_API_KEY,
-                    "name": f"avatar_{uuid.uuid4().hex[:8]}"
-                },
-                files={"image": (file.filename, content, file.content_type)}
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                return {
-                    "url": data["data"]["url"],
-                    "filename": data["data"]["image"]["filename"],
-                    "timestamp": datetime.utcnow().isoformat()
-                }
-            else:
-                raise HTTPException(status_code=500, detail="Failed to upload image to host")
+        # Upload to ImgBB via base64 encoding (most reliable for their API)
+        url = "https://api.imgbb.com/1/upload"
+        payload = {
+            "key": IMGBB_API_KEY,
+            "image": base64.b64encode(content).decode('utf-8'),
+            "name": f"avatar_{uuid.uuid4().hex[:8]}"
+        }
+        
+        response = requests.post(url, data=payload)
+        
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                "url": data["data"]["url"],
+                "filename": data["data"]["image"]["filename"],
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        else:
+            raise HTTPException(status_code=500, detail=f"Failed to upload image to host: {response.text}")
                 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process image: {str(e)}")
