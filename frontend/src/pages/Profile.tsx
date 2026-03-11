@@ -45,7 +45,8 @@ export const Profile = () => {
     formData.append('file', file);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL;
+      // Use fallback if env var is missing during local dev
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await axios.post(`${baseUrl}/user/upload-avatar`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
