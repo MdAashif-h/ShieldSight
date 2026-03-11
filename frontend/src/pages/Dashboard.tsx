@@ -634,7 +634,7 @@ export const Dashboard = () => {
               {riskDistribution.length > 0 ? (
                 <div className="flex flex-col">
                   {/* Pie Chart */}
-                  <div className="h-48">
+                  <div className="h-48 min-h-[200px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
                         <Pie
@@ -703,7 +703,7 @@ export const Dashboard = () => {
             </CardHeader>
             <CardContent>
               {dailyActivity.length > 1 ? (
-                <div className="h-80">
+                <div className="h-80 min-h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsLineChart
                       data={dailyActivity}

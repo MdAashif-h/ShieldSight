@@ -207,15 +207,16 @@ def analyze_domain_risk(url: str) -> tuple[bool, str, float]:
                 if parent_domain in HIGH_TRUST_DOMAINS:
                     return True, f"subdomain_of_{parent_domain}", 0.2
         
+        # 🎉 ALLOW OFFICIAL .google TLD (e.g., skills.google)
+        if netloc.endswith('.google'):
+             return True, "authorized_google_tld", 0.4
+
         # Regex phishing keyword check (whole words only) - ONLY if not trusted
-        for keyword in PHISHING_KEYWORDS:
-            if re.search(rf'\b{re.escape(keyword)}\b', netloc):
-                return False, f"contains_phishing_keyword_{keyword}", -0.3
 
         # 🔥 BRAND MIMICRY DETECTION (New Strict Rules)
         # Patterns that indicate high risk if not strictly matching official domains
         BRAND_PATTERNS = {
-            'google': {'google.com', 'google.co', 'accounts.google.com', 'drive.google.com', 'docs.google.com'},
+            'google': {'google.com', 'google.co', 'accounts.google.com', 'drive.google.com', 'docs.google.com', 'google.co.in', 'google.ad', 'google.io'},
             'paypal': {'paypal.com', 'paypal.me', 'paypal.co'},
             'amazon': {'amazon.com', 'amazon.co', 'aws.amazon.com'},
             'facebook': {'facebook.com', 'fb.com', 'messenger.com'},

@@ -1,4 +1,4 @@
-const API_URL = 'https://your-api.railway.app';
+const API_URL = 'https://shieldsight-gsnq.onrender.com';
 
 // Track statistics
 let stats = {
