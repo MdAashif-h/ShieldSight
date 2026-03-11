@@ -60,8 +60,8 @@ def check_url_availability(url: str, timeout: int = 3) -> Dict:
         # Success - URL responded
         result['status'] = 'success'
         # Treat certain status codes as "not accessible" for risk calculation
-        # 401, 403, 405 are often used by phishing precursors or misconfigured parks
-        result['is_accessible'] = response.status_code < 400 or response.status_code == 404
+        # 401, 403, 405 are often used by phishing precursors, but the server is definitely ONLINE
+        result['is_accessible'] = response.status_code < 400 or response.status_code in (401, 403, 404, 405)
         result['status_code'] = response.status_code
         result['response_time_ms'] = int(round((end_time - start_time) * 1000))  # ← Convert to int
         result['ssl_valid'] = url.startswith('https://')

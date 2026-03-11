@@ -65,26 +65,26 @@ class GeoProxyChecker:
             # Get IP
             ip = socket.gethostbyname(domain.split(':')[0])
             
-            # Query IP-API (free tier)
+            # Query GeoJS (Free, generous rate limits, better for shared hosting like Render)
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    f'http://ip-api.com/json/{ip}',
+                    f'https://get.geojs.io/v1/ip/geo/{ip}.json',
                     timeout=aiohttp.ClientTimeout(total=5)
                 ) as response:
                     if response.status == 200:
                         data = await response.json()
                         
-                        if data.get('status') == 'success':
+                        if data.get('country'):
                             return {
                                 'ip': ip,
                                 'country': data.get('country'),
-                                'country_code': data.get('countryCode'),
-                                'region': data.get('regionName'),
+                                'country_code': data.get('country_code'),
+                                'region': data.get('region'),
                                 'city': data.get('city'),
-                                'isp': data.get('isp'),
+                                'isp': data.get('organization_name') or data.get('organization'),
                                 'timezone': data.get('timezone'),
-                                'is_proxy': data.get('proxy', False),
-                                'is_hosting': data.get('hosting', False),
+                                'is_proxy': False,  # GeoJS doesn't provide this by default
+                                'is_hosting': False,
                             }
         except Exception as e:
             logger.warning(f"Geolocation check failed: {e}")
