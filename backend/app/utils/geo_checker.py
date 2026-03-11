@@ -43,8 +43,11 @@ class GeoProxyChecker:
             domain = parsed.netloc or parsed.path
             domain = domain.split(':')[0]
             
+            # Resolve domain to IP first
+            ip = socket.gethostbyname(domain)
+            
             # Simple synchronous requests call for reliability within the async wrapper
-            response = requests.get(f'https://get.geojs.io/v1/ip/geo/{domain}.json', timeout=5)
+            response = requests.get(f'https://get.geojs.io/v1/ip/geo/{ip}.json', timeout=5)
             
             if response.status_code == 200:
                 data = response.json()
