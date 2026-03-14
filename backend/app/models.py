@@ -53,14 +53,22 @@ class GeoAnalysis(BaseModel):
 
 class Availability(BaseModel):
     """Website availability/accessibility check results"""
-    is_accessible: bool
+    status: Optional[str] = None
+    is_accessible: Optional[bool] = None  # Can be None on timeout/error
     status_code: Optional[int] = None
     response_time_ms: Optional[int] = None
     ssl_valid: Optional[bool] = None
+    ssl_details: Optional[str] = None
     has_redirects: Optional[bool] = None
+    redirect_count: Optional[int] = 0
     final_url: Optional[str] = None
     error_message: Optional[str] = None
     server_info: Optional[str] = None
+    headers: Optional[Dict[str, Any]] = {}
+    security_flags: Optional[List[str]] = []
+    security_assessment: Optional[Dict[str, Any]] = {}
+
+    model_config = {"extra": "allow"}
 
 
 # ----------------------------

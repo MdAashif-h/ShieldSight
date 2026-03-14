@@ -850,8 +850,10 @@ async def predict_url(
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         logger.error(f"Prediction failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @router.post("/fast", response_model=PredictionResponse)
