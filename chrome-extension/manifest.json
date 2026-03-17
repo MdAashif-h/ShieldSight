@@ -7,13 +7,17 @@
     "activeTab",
     "storage",
     "notifications",
-    "downloads"
+    "downloads",
+    "scripting"
   ],
   "host_permissions": [
-    "https://shieldsight-gsnq.onrender.com/*"
+    "https://shieldsight-gsnq.onrender.com/*",
+    "https://*/*",
+    "http://*/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_scripts": [
     {

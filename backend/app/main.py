@@ -28,6 +28,7 @@ from fastapi.exceptions import RequestValidationError
 from app.routes import health, predict, user, contact
 from app.ml_model import ml_model
 from app.utils.logger import setup_logging
+from app.utils.cache import prediction_cache, explanation_cache
 from fastapi.staticfiles import StaticFiles
 import os
 
@@ -99,8 +100,7 @@ async def lifespan(app: FastAPI):
 
     if not ml_model.is_loaded():
         try:
-            success = ml_model.load_model()
-            if success:
+            if (success := ml_model.load_model()):
                 logger.info("ML model loaded successfully")
             else:
                 logger.error("ML model failed to load (files might be missing or corrupted)")
@@ -113,7 +113,6 @@ async def lifespan(app: FastAPI):
     logger.info("Health: /health | Metrics: /metrics")
     
     # Clear caches on startup
-    from app.utils.cache import prediction_cache, explanation_cache
     prediction_cache.clear()
     explanation_cache.clear()
     logger.info("Prediction and explanation caches cleared")
@@ -137,12 +136,25 @@ app = FastAPI(
 # -------------------------------------------------
 # CORS Middleware
 # -------------------------------------------------
+# Get allowed origins from environment or use defaults
+ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLOWED_ORIGINS') else [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://shieldsight.vercel.app",
+    "https://shieldsight-gsnq.onrender.com",
+    "chrome-extension://*"
+]
+
+# Clean up whitespace
+ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Set for production
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # -------------------------------------------------
