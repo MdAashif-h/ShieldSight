@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, Eye, EyeOff, Shield, Check } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Shield, Check, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -11,7 +11,6 @@ import { Modal } from '../ui/Modal';
 
 
 export const SignupForm = () => {
-  const navigate = useNavigate();
   const { signup, loading } = useAuthStore();
 
   const [formData, setFormData] = useState({
@@ -23,6 +22,7 @@ export const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [activeModal, setActiveModal] = useState<'terms' | 'privacy' | null>(null);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   // Password strength indicator
   const getPasswordStrength = (password: string) => {
@@ -54,7 +54,7 @@ export const SignupForm = () => {
 
     try {
       await signup(formData.email, formData.password, formData.name);
-      navigate('/app/dashboard');
+      setVerificationSent(true);
     } catch (error) {
       console.error('Signup failed:', error);
     }
@@ -90,6 +90,49 @@ export const SignupForm = () => {
         />
       </div>
 
+      {/* Verification Success Screen */}
+      {verificationSent ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md relative z-10"
+        >
+          <Card className="glass p-8 shadow-2xl text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="mb-6"
+            >
+              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                <CheckCircle2 className="w-10 h-10 text-white" />
+              </div>
+            </motion.div>
+
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Verify Your Email
+            </h2>
+            <p className="text-muted-foreground mb-2">
+              We've sent a verification link to:
+            </p>
+            <p className="text-primary font-semibold mb-6">
+              {formData.email}
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Please check your inbox (and spam folder) and click the verification link before logging in.
+            </p>
+
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
+            >
+              <Mail className="w-5 h-5" />
+              Go to Login
+            </Link>
+          </Card>
+        </motion.div>
+      ) : (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -297,6 +340,7 @@ export const SignupForm = () => {
           Protected by ShieldSight © 2026
         </p>
       </motion.div>
+      )}
 
       {/* Terms & Privacy Modals */}
       <Modal

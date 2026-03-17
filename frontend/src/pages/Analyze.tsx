@@ -240,8 +240,10 @@ export const Analyze = () => {
       }
 
       // ✅ OPTIMIZATION: Parallel API calls (not sequential)
+      // First call only does ML + External Checks (FAST)
+      // Second call handles SHAP Explanation (COMPUTE HEAVY)
       const [predictionResult, explanationResult] = await Promise.all([
-        predictURL(url),
+        predictURL(url, false), 
         explainPrediction(url)
       ]);
 
@@ -452,7 +454,7 @@ export const Analyze = () => {
             <h3 style="font-size: 22px; font-weight: 800; color: #1f2937; margin: 0 0 20px 0; padding-bottom: 15px; border-bottom: 3px solid #e5e7eb;">Top Risk Factors & Feature Contributions</h3>
             
             <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-              ${explanation.top_features.slice(0, 10).map((feature) => `
+              ${(explanation.top_features || []).slice(0, 10).map((feature) => `
                 <div style="background: white; border: 2px solid ${feature.impact === 'negative' ? '#fee2e2' : '#dcfce7'}; border-radius: 10px; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                   <div>
                     <p style="font-size: 14px; color: #6b7280; margin: 0 0 8px 0; font-weight: 600; text-transform: uppercase;">Feature</p>
@@ -678,7 +680,7 @@ export const Analyze = () => {
               </tr>
             </thead>
             <tbody>
-              ${explanation.top_features.slice(0, 8).map(f => `
+              ${(explanation.top_features || []).slice(0, 8).map(f => `
                 <tr>
                   <td><strong>${f.feature.replace(/_/g, ' ')}</strong></td>
                   <td><code style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px;">${f.value}</code></td>
@@ -1426,7 +1428,7 @@ export const Analyze = () => {
                     </div>
 
                     <div className="space-y-3">
-                      {explanation.top_features.slice(0, 8).map((feature, index) => (
+                      {(explanation.top_features || []).slice(0, 8).map((feature, index) => (
                         <div
                           key={index}
                           className="p-3 rounded-lg bg-muted/20 border border-border/10 hover:bg-muted/40 transition-colors"

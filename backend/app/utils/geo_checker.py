@@ -45,18 +45,21 @@ class GeoProxyChecker:
             
             print(f"--- DEBUG GEO START: {domain} ---")
             
-            # Resolve domain to IP first
+            # Resolve domain to IP first (in a thread to avoid blocking)
             try:
-                ip = socket.gethostbyname(domain)
+                ip = await asyncio.to_thread(socket.gethostbyname, domain)
                 print(f"Resolved {domain} to {ip}")
             except Exception as e:
                 print(f"DNS Resolution failed for {domain}: {e}")
                 return {'ip': None, 'country': 'Unknown', 'error': f'DNS failure: {e}'}
             
-            # Try GeoJS First
+            # Try GeoJS First (in a thread)
             try:
                 print(f"Querying GeoJS for {ip}...")
-                response = requests.get(f'https://get.geojs.io/v1/ip/geo/{ip}.json', timeout=5)
+                def query_geojs():
+                    return requests.get(f'https://get.geojs.io/v1/ip/geo/{ip}.json', timeout=5)
+                
+                response = await asyncio.to_thread(query_geojs)
                 if response.status_code == 200:
                     data = response.json()
                     print(f"GeoJS Result: {data.get('country')}")
@@ -75,10 +78,13 @@ class GeoProxyChecker:
             except Exception as geojs_err:
                 print(f"GeoJS query failed: {geojs_err}")
 
-            # Fallback to ip-api.com
+            # Fallback to ip-api.com (in a thread)
             try:
                 print(f"Querying ip-api.com for {ip}...")
-                response = requests.get(f'http://ip-api.com/json/{ip}', timeout=5)
+                def query_ipapi():
+                    return requests.get(f'http://ip-api.com/json/{ip}', timeout=5)
+                
+                response = await asyncio.to_thread(query_ipapi)
                 if response.status_code == 200:
                     data = response.json()
                     print(f"ip-api Result: {data.get('country')}")

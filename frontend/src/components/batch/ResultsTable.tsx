@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Shield,
   AlertTriangle,
@@ -320,119 +320,63 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
                 </tr>
               </thead>
               <tbody>
-                <AnimatePresence mode="popLayout">
                   {sortedResults.map((result, index) => (
-                    <tr key={result.url} className="contents">
-                      <motion.tr
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        className="border-b border-border/50 hover:bg-muted/50 transition-colors"
-                      >
-                        <td className="p-3">
-                          <code className="text-sm text-foreground font-mono truncate max-w-md block">
-                            {result.url}
-                          </code>
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            {getResultIcon(result.prediction)}
-                            <span className="text-sm capitalize font-medium">
-                              {result.prediction}
-                            </span>
+                    <motion.tr
+                      key={result.url}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                      className="border-b border-border/50 hover:bg-muted/50 transition-colors"
+                    >
+                      <td className="p-3">
+                        <code className="text-sm text-foreground font-mono truncate max-w-md block">
+                          {result.url}
+                        </code>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          {getResultIcon(result.prediction)}
+                          <span className="text-sm capitalize font-medium">
+                            {result.prediction}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden max-w-[100px]">
+                            <div
+                              className={cn(
+                                'h-full rounded-full',
+                                result.prediction === 'phishing'
+                                  ? 'bg-red-500'
+                                  : 'bg-green-500'
+                              )}
+                              style={{ width: `${result.confidence * 100}%` }}
+                            />
                           </div>
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden max-w-[100px]">
-                              <div
-                                className={cn(
-                                  'h-full rounded-full',
-                                  result.prediction === 'phishing'
-                                    ? 'bg-red-500'
-                                    : 'bg-green-500'
-                                )}
-                                style={{ width: `${result.confidence * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-semibold text-foreground">
-                              {(result.confidence * 100).toFixed(1)}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          {getRiskBadge(result.risk_level)}
-                        </td>
-                        <td className="p-3 text-right">
-                          <button
-                            onClick={() => setExpandedRow(expandedRow === index ? null : index)}
-                            className="p-1 hover:bg-muted rounded transition-colors"
-                          >
-                            <motion.div
-                              animate={{ rotate: expandedRow === index ? 180 : 0 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                            </motion.div>
-                          </button>
-                        </td>
-                      </motion.tr>
-
-                      {expandedRow === index && (
-                        <motion.tr
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="border-b border-border"
+                          <span className="text-sm font-semibold text-foreground">
+                            {(result.confidence * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        {getRiskBadge(result.risk_level)}
+                      </td>
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={() => setExpandedRow(expandedRow === index ? null : index)}
+                          className="p-1 hover:bg-muted rounded transition-colors"
                         >
-                          <td colSpan={5} className="p-0">
-                            <div className="p-6 bg-muted/30">
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="space-y-4">
-                                  <h4 className="text-sm font-medium text-muted-foreground">Detection Probabilities</h4>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/10">
-                                      <p className="text-xs text-muted-foreground mb-1">Phishing</p>
-                                      <p className="text-lg font-bold text-red-500">{(result.phishing_probability * 100).toFixed(1)}%</p>
-                                    </div>
-                                    <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/10">
-                                      <p className="text-xs text-muted-foreground mb-1">Legitimate</p>
-                                      <p className="text-lg font-bold text-green-500">{(result.legitimate_probability * 100).toFixed(1)}%</p>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                  <h4 className="text-sm font-medium text-muted-foreground">Analysis Details</h4>
-                                  <div className="p-3 rounded-lg bg-muted border border-border">
-                                    <div className="flex justify-between items-center mb-2">
-                                      <span className="text-xs text-muted-foreground">Risk Score</span>
-                                      <span className="text-sm font-bold">{(result.confidence * 100).toFixed(1)}/100</span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-border rounded-full overflow-hidden">
-                                      <div
-                                        className={cn("h-full", result.prediction === 'phishing' ? 'bg-red-500' : 'bg-green-500')}
-                                        style={{ width: `${result.confidence * 100}%` }}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                  <h4 className="text-sm font-medium text-muted-foreground">URL Overview</h4>
-                                  <div className="p-3 rounded-lg bg-muted border border-border">
-                                    <p className="text-xs text-muted-foreground mb-1">Target</p>
-                                    <code className="text-sm font-mono break-all line-clamp-2">{result.url}</code>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </motion.tr>
-                      )}
-                    </tr>
+                          <motion.div
+                            animate={{ rotate: expandedRow === index ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                          </motion.div>
+                        </button>
+                      </td>
+                    </motion.tr>
                   ))}
-                </AnimatePresence>
               </tbody>
             </table>
           </div>

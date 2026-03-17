@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Shield, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { showToast } from '../ui/Toast';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -9,20 +10,38 @@ import { Card } from '../ui/Card';
 
 export const LoginForm = () => {
   const navigate = useNavigate();
-  const { login, loading } = useAuthStore();
+  const { login, resendVerification, loading } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setNeedsVerification(false);
     try {
       await login(email, password);
       navigate('/app/dashboard');
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message === 'email-not-verified') {
+        setNeedsVerification(true);
+      }
       console.error('Login failed:', error);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email || !password) return;
+    setResending(true);
+    try {
+      await resendVerification(email, password);
+    } catch {
+      // Toast is handled in the store
+    } finally {
+      setResending(false);
     }
   };
 
@@ -81,6 +100,56 @@ export const LoginForm = () => {
               Sign in to ShieldSight Dashboard
             </p>
           </div>
+
+          {/* Email Verification Warning Banner */}
+          {needsVerification && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mb-4 p-4 rounded-xl bg-orange-500/10 border-2 border-orange-500/30"
+            >
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">
+                    Email not verified
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Please check your inbox and click the verification link before logging in.
+                  </p>
+                  <div className="mt-2 flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={resending}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
+                      {resending ? 'Sending...' : 'Resend Verification Email'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const { reloadUser } = useAuthStore.getState();
+                        await reloadUser();
+                        const freshUser = useAuthStore.getState().user;
+                        if (freshUser?.emailVerified) {
+                          showToast('success', 'Email verified! Logging you in...');
+                          navigate('/app/dashboard');
+                        } else {
+                          showToast('warning', 'Email still not verified. Please check your inbox.');
+                        }
+                      }}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:underline dark:text-green-400"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Check Verification Status
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">

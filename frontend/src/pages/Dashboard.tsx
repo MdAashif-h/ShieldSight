@@ -676,9 +676,12 @@ export const Dashboard = () => {
                   </div>
                 </div>
               ) : (
-                <div className="h-48 flex flex-col items-center justify-center">
-                  <PieChart className="w-16 h-16 text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground">No risk data available</p>
+                <div className="h-64 flex flex-col items-center justify-center bg-muted/20 rounded-xl border-2 border-dashed border-border/50">
+                  <div className="p-4 rounded-full bg-muted/50 mb-4">
+                    <PieChart className="w-10 h-10 text-muted-foreground/40" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">No risk data available yet</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Start scanning URLs to see analytics</p>
                 </div>
               )}
             </CardContent>
@@ -743,9 +746,12 @@ export const Dashboard = () => {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="h-80 flex flex-col items-center justify-center">
-                  <LineChart className="w-16 h-16 text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground">Insufficient data for timeline</p>
+                <div className="h-80 flex flex-col items-center justify-center bg-muted/20 rounded-xl border-2 border-dashed border-border/50">
+                  <div className="p-4 rounded-full bg-muted/50 mb-4">
+                    <LineChart className="w-10 h-10 text-muted-foreground/40" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">Insufficient data for timeline</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Activity over time will appear here</p>
                 </div>
               )}
             </CardContent>

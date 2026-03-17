@@ -6,6 +6,7 @@ PERFORMANCE: Optional SHAP, background tasks, fast prediction mode
 """
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi.responses import JSONResponse
 from datetime import datetime
 import logging
 import asyncio
@@ -230,6 +231,9 @@ def analyze_domain_risk(url: str) -> tuple[bool, str, float]:
         }
 
         # Check for brand names in the domain (e.g., 'accounts-google' contains 'google')
+        if not isinstance(netloc, str):
+             netloc = str(netloc)
+             
         for brand, allowed_domains in BRAND_PATTERNS.items():
             if brand in netloc:
                 # It contains the brand name. Now check if it's authorized.
@@ -367,6 +371,8 @@ async def predict_single_url(
     legit_prob = float(probabilities[0][1])
     ml_confidence = max(phishing_prob, legit_prob)
     
+    logger.debug(f"[{url_hash[:6]}] ML prediction: {phishing_prob:.3f}/{legit_prob:.3f}")
+    
     # 6. Apply domain confidence adjustment
     if domain_boost > 0:
         final_confidence = min(ml_confidence + (domain_boost * (1 - ml_confidence)), 0.99)
@@ -374,6 +380,8 @@ async def predict_single_url(
         final_confidence = max(ml_confidence * (1 + domain_boost), 0.01)
     else:
         final_confidence = ml_confidence
+    
+    logger.debug(f"[{url_hash[:6]}] Confidence after domain boost: {final_confidence:.3f}")
     
     # 7. Smart prediction override logic
     if is_whitelisted and domain_boost > 0.2:
@@ -492,152 +500,114 @@ async def predict_single_url(
             logger.debug(f"Background: Queued explanation computation for {url[:50]}")
     
     # ═══════════════════════════════════════════════════════════
-    # ✨ PERFORMANCE: OPTIONAL AVAILABILITY CHECK
-    # Skip for fast mode (saves ~2 seconds!)
+    # ✨ PERFORMANCE: PARALLEL EXTERNAL CHECKS
+    # Run availability and geo-analysis concurrently to save ~5-10 seconds
     # ═══════════════════════════════════════════════════════════
     availability = None
-    
-    if not skip_external_checks:
-        try:
-            # Check if URL is accessible (with timeout)
-            availability_result = await asyncio.wait_for(
-                asyncio.to_thread(check_url_availability, url, timeout=3),
-                timeout=4.0  # 4 second timeout (1 extra for overhead)
-            )
-            
-            # ✅ FIXED: Ensure all fields exist with proper defaults
-            availability = {
-                "status": availability_result.get("status", "unknown"),
-                "is_accessible": availability_result.get("is_accessible"),
-                "status_code": availability_result.get("status_code"),
-                "response_time_ms": availability_result.get("response_time_ms"),
-                "ssl_valid": availability_result.get("ssl_valid"),
-                "ssl_details": availability_result.get("ssl_details"),
-                "has_redirects": availability_result.get("has_redirects", False),
-                "redirect_count": availability_result.get("redirect_count", 0),
-                "final_url": availability_result.get("final_url"),
-                "error_message": availability_result.get("error_message"),
-                "server_info": availability_result.get("server_info"),
-                "headers": availability_result.get("headers", {}),
-                "security_flags": availability_result.get("security_flags", []),
-                "security_assessment": availability_result.get("security_assessment", {})
-            }
-            
-            logger.debug(f"Availability check for {url}: {availability.get('status', 'unknown')}")
-            
-        except asyncio.TimeoutError:
-            logger.warning(f"Availability check timeout for: {url}")
-            availability = {
-                "status": "timeout",
-                "is_accessible": False,  # ✅ FIXED: Must be boolean
-                "status_code": None,
-                "response_time_ms": None,
-                "ssl_valid": None,
-                "ssl_details": None,
-                "has_redirects": False,  # ✅ FIXED: Must be boolean
-                "redirect_count": 0,
-                "final_url": None,
-                "error_message": "Availability check timed out",
-                "server_info": None,
-                "headers": {},
-                "security_flags": [],
-                "security_assessment": {
-                    "threat_level": "unknown",
-                    "issues_found": 0,
-                    "recommendations": "Could not verify availability"
-                }
-            }
-        except Exception as e:
-            logger.warning(f"Availability check failed for {url}: {str(e)}")
-            availability = {
-                "status": "error",
-                "is_accessible": False,  # ✅ FIXED: Must be boolean
-                "status_code": None,
-                "response_time_ms": None,
-                "ssl_valid": None,
-                "ssl_details": None,
-                "has_redirects": False,  # ✅ FIXED: Must be boolean
-                "redirect_count": 0,
-                "final_url": None,
-                "error_message": f"Check failed: {str(e)[:100]}",
-                "server_info": None,
-                "headers": {},
-                "security_flags": [],
-                "security_assessment": {
-                    "threat_level": "unknown",
-                    "issues_found": 0,
-                }
-            }
-
-        # ✨ ADJUST RISK LEVEL FOR OFFLINE SITES (inside if block)
-        # ✨ ADJUST RISK LEVEL FOR OFFLINE OR RESTRICTED SITES
-        is_restricted = availability.get('status_code') in [403, 405]
-        is_offline = not availability.get('is_accessible')
-        
-        # ✨ AGGRESSIVE OVERRIDE FOR RESTRICTED TYPOSQUATTING
-        if ("typosquatting_detected" in domain_reason) and (is_offline or is_restricted):
-            prediction = "phishing"
-            final_confidence = 0.99
-            risk_level = "critical"
-            summary_text = f"🚨 CRITICAL: This URL is a lookalike (typo-squatting) and is currently restricted or offline. This is a very strong indicator of a malicious phishing landing page."
-            logger.warning(f"Aggressive phishing override for restricted lookalike: {url}")
-        
-        if availability and prediction == 'legitimate' and not is_whitelisted:
-            if is_offline or is_restricted:
-                # If a "legitimate" site is offline or restricted, that's suspicious.
-                if risk_level in ['very_low', 'low']:
-                    risk_level = 'caution'
-                    status_reason = "OFFLINE" if is_offline else f"RESTRICTED (HTTP {availability.get('status_code')})"
-                    summary_text = f"⚠️ Caution: This site is currently {status_reason}. While it shares characteristics with legitimate sites, we cannot verify its current content and its restricted status is unusual for a public site."
-                    # Reduce confidence in legitimacy
-                    final_confidence = min(final_confidence, 0.70)
-                    logger.info(f"Downgraded risk level to CAUTION for {status_reason} site: {url}")
-    
-    # ═══════════════════════════════════════════════════════════
-    # ✨ PERFORMANCE: OPTIONAL GEO-BLOCKING & PROXY DETECTION
-    # Skip for fast mode (saves ~2-5 seconds!)
-    # ═══════════════════════════════════════════════════════════
     geo_analysis = None
     
     if not skip_external_checks:
-        try:
-            geo_checker = GeoProxyChecker()
-            # ✅ FIXED: full_geo_analysis is already async, don't wrap with to_thread
-            geo_result = await asyncio.wait_for(
-                geo_checker.full_geo_analysis(url),
-                timeout=5.0  # 5 second timeout for geo analysis
-            )
-            
+        logger.debug(f"[{url_hash[:6]}] Starting parallel external checks...")
+        
+        async def check_availability_safely():
+            try:
+                a_start = time.time()
+                result = await asyncio.wait_for(
+                    asyncio.to_thread(check_url_availability, url, timeout=3),
+                    timeout=4.0
+                )
+                logger.debug(f"[{url_hash[:6]}] Availability check took: {time.time() - a_start:.2f}s")
+                return result
+            except Exception as e:
+                logger.warning(f"[{url_hash[:6]}] Availability check error: {str(e)}")
+                return {"status": "error", "is_accessible": False, "error_message": str(e)}
+
+        async def check_geo_safely():
+            try:
+                g_start = time.time()
+                geo_checker = GeoProxyChecker()
+                result = await asyncio.wait_for(
+                    geo_checker.full_geo_analysis(url),
+                    timeout=6.0
+                )
+                logger.debug(f"[{url_hash[:6]}] Geo analysis took: {time.time() - g_start:.2f}s")
+                return result
+            except Exception as e:
+                logger.warning(f"[{url_hash[:6]}] Geo analysis error: {str(e)}")
+                return None
+
+        # Run both in parallel
+        a_task, g_task = await asyncio.gather(
+            check_availability_safely(),
+            check_geo_safely()
+        )
+        
+        # Process Availability Result
+        availability_result = a_task
+        
+        # Determine accessibility - be optimistic for whitelisted sites on timeout
+        is_accessible_raw = availability_result.get("is_accessible")
+        if is_accessible_raw is None: # Timeout or error-based unknown
+            # If it's a known safe site, assume it's ONLINE unless we got a clear error
+            is_accessible = True if is_whitelisted else False
+        else:
+            is_accessible = bool(is_accessible_raw)
+
+        availability = {
+            "status": availability_result.get("status", "unknown"),
+            "is_accessible": is_accessible,
+            "status_code": availability_result.get("status_code"),
+            "response_time_ms": availability_result.get("response_time_ms"),
+            "ssl_valid": availability_result.get("ssl_valid"),
+            "has_redirects": availability_result.get("has_redirects", False),
+            "redirect_count": availability_result.get("redirect_count", 0),
+            "final_url": availability_result.get("final_url"),
+            "error_message": availability_result.get("error_message"),
+            "server_info": availability_result.get("server_info"),
+            "headers": availability_result.get("headers", {}),
+            "security_flags": availability_result.get("security_flags", []),
+            "security_assessment": availability_result.get("security_assessment", {})
+        }
+        
+        # Process Geo Result
+        if g_task:
+            geo_result = g_task
             geo_analysis = {
-                "geolocation": geo_result.get("geolocation"),
+                "geolocation": geo_result.get("geolocation") or {},
                 "blocked_in_countries": geo_result.get("blocked_in_countries", []),
-                "proxy_detection": geo_result.get("proxy_detection"),
+                "proxy_detection": geo_result.get("proxy_detection") or {},
                 "is_geo_restricted": geo_result.get("is_geo_restricted", False),
                 "total_blocks": geo_result.get("total_blocks", 0)
             }
+        
+        # ✨ ADJUST RISK LEVEL FOR OFFLINE OR RESTRICTED SITES
+        if availability:
+            is_restricted = availability.get('status_code') in [403, 405]
+            is_offline = not availability.get('is_accessible')
             
-            logger.debug(f"Geo analysis for {url}: {geo_analysis.get('total_blocks', 0)} blocks detected")
+            # ✨ AGGRESSIVE OVERRIDE FOR RESTRICTED TYPOSQUATTING
+            if ("typosquatting_detected" in domain_reason) and (is_offline or is_restricted):
+                prediction = "phishing"
+                final_confidence = 0.99
+                risk_level = "critical"
+                summary_text = f"🚨 CRITICAL: This URL is a lookalike (typo-squatting) and is currently restricted or offline. This is a very strong indicator of a malicious phishing landing page."
+                logger.warning(f"Aggressive phishing override for restricted lookalike: {url}")
             
-        except asyncio.TimeoutError:
-            logger.warning(f"Geo analysis timeout for: {url}")
-            geo_analysis = {
-                "geolocation": None,
-                "blocked_in_countries": [],
-                "proxy_detection": None,
-                "is_geo_restricted": False,
-                "total_blocks": 0
-            }
-        except Exception as e:
-            logger.error(f"Geo analysis failed for {url}: {str(e)}")
-            geo_analysis = None
+            if prediction == 'legitimate' and not is_whitelisted:
+                if is_offline or is_restricted:
+                    if risk_level in ['very_low', 'low']:
+                        risk_level = 'caution'
+                        status_reason = "OFFLINE" if is_offline else f"RESTRICTED (HTTP {availability.get('status_code')})"
+                        summary_text = f"⚠️ Caution: This site is currently {status_reason}. While it shares characteristics with legitimate sites, we cannot verify its current content and its restricted status is unusual for a public site."
+                        final_confidence = min(final_confidence, 0.70)
     
     # ═══════════════════════════════════════════════════════════
     # ✨ CRITICAL SIGNAL OVERRIDE
     # HTTPS + Invalid SSL/Offline = High Risk
     # ═══════════════════════════════════════════════════════════
     if prediction == 'legitimate' and availability:
-        # Check if features indicate HTTPS usage
-        has_https_feature = feature_extractor.extract_with_defaults(url, ['IsHTTPS'])['IsHTTPS'].iloc[0] == 1.0
+        # Check if features indicate HTTPS usage (use existing features_df)
+        has_https_feature = features_df['IsHTTPS'].iloc[0] == 1.0 if 'IsHTTPS' in features_df.columns else False
         
         # If model thinks it's legit because of HTTPS, but SSL is actually invalid or site is dead...
         if has_https_feature and (availability.get('ssl_valid') is False or availability.get('is_accessible') is False):
@@ -673,15 +643,18 @@ async def predict_single_url(
     # Geo risk (0-1)
     geo_risk = 0.0
     if geo_analysis:
-        geo_risk = min(1.0, geo_analysis.get('total_blocks', 0) / 5)  # Normalize by max expected blocks
-        if geo_analysis.get('proxy_detection', {}).get('is_proxy_url'):
+        geo_risk = min(1.0, geo_analysis.get('total_blocks', 0) / 5)
+        proxy_data = geo_analysis.get('proxy_detection') or {}
+        if proxy_data.get('is_proxy_url'):
             geo_risk = max(geo_risk, 0.5)
     
     # Proxy risk (0-1)
     proxy_risk = 0.0
-    if geo_analysis and geo_analysis.get('proxy_detection', {}).get('is_proxy_url'):
-        confidence_level = geo_analysis['proxy_detection'].get('confidence', 'low')
-        proxy_risk = {'high': 0.9, 'medium': 0.6, 'low': 0.3}.get(confidence_level, 0.3)
+    if geo_analysis:
+        proxy_data = geo_analysis.get('proxy_detection') or {}
+        if proxy_data.get('is_proxy_url'):
+            confidence_level = proxy_data.get('confidence', 'low')
+            proxy_risk = {'high': 0.9, 'medium': 0.6, 'low': 0.3}.get(confidence_level, 0.3)
     
     # Calculate threat index
     threat_data = calculate_threat_index(
@@ -850,9 +823,7 @@ async def predict_url(
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        logger.error(f"Prediction failed: {str(e)}", exc_info=True)
+        logger.error(f"Prediction failed for URL {url_input.url}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
@@ -1167,31 +1138,30 @@ async def explain_prediction(url_input: URLInput):
     try:
         url = url_input.url.strip()
         
-        # Check explanation cache
+        # Check explanation cache (cached as dict to avoid serialization issues)
         cached = explanation_cache.get(url)
         if cached:
             logger.debug(f"Explanation cache hit: {url}")
-            return cached
+            return JSONResponse(content=cached)
         
-        # Get prediction
-        prediction = await predict_single_url(url)
+        # Get prediction - SKIP external checks here as the main /predict/ call handles them
+        # This prevents double networking and saves ~5-10 seconds
+        prediction = await predict_single_url(url, include_explanation=False, skip_external_checks=True)
         is_whitelisted, domain_reason, domain_boost = analyze_domain_risk(url)
+        
+        feature_names = ml_model.get_feature_names()
+        features_df = feature_extractor.extract_with_defaults(url, feature_names)
         
         top_features = []
         explanation_method = "unknown"
         
         # Domain-based explanation for whitelisted
         if is_whitelisted and domain_boost > 0.2:
-            # ✅ Only add if not already handled by the domain boost logic below
-            # Or better, don't add here and let the unified domain_boost handling do it
             pass
         else:
             # ML-based explanation
             try:
-                feature_names = ml_model.get_feature_names()
-                features_df = feature_extractor.extract_with_defaults(url, feature_names)
-                
-                # Get SHAP explanation with timeout
+                # Get SHAP explanation with timeout using already extracted features_df
                 explanation = await asyncio.wait_for(
                     asyncio.to_thread(ml_model.get_shap_explanation, features_df),
                     timeout=2.0
@@ -1295,7 +1265,7 @@ async def explain_prediction(url_input: URLInput):
         )
         
         # Cache explanation
-        explanation_cache.set(url, response, ttl=900)
+        explanation_cache.set(url, response.model_dump(), ttl=900)
         logger.info(f"Explanation generated: {url} -> method: {explanation_method}")
         
         return response

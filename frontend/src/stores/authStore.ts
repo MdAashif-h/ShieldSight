@@ -7,6 +7,7 @@ import {
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -23,7 +24,9 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  resendVerification: (email: string, password: string) => Promise<void>;
   updateUserProfile: (displayName?: string, photoURL?: string | null) => Promise<void>;
+  reloadUser: () => Promise<void>;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -46,8 +49,15 @@ export const useAuthStore = create<AuthState>()(
           set({ loading: true, error: null });
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(userCredential.user, { displayName });
-          set({ user: userCredential.user, loading: false });
-          showToast('success', 'Account created successfully!');
+
+          // Send verification email
+          await sendEmailVerification(userCredential.user);
+
+          // Sign out immediately — user must verify before they can log in
+          await signOut(auth);
+
+          set({ user: null, loading: false });
+          showToast('success', 'Account created! Please check your email to verify your account.');
         } catch (error: any) {
           set({ error: error.message, loading: false });
           showToast('error', error.message);
@@ -63,11 +73,22 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ loading: true, error: null });
           const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+          // Block unverified users
+          if (!userCredential.user.emailVerified) {
+            await signOut(auth);
+            set({ user: null, loading: false, error: 'email-not-verified' });
+            showToast('error', 'Please verify your email before logging in. Check your inbox!');
+            throw new Error('email-not-verified');
+          }
+
           set({ user: userCredential.user, loading: false });
           showToast('success', 'Welcome back!');
         } catch (error: any) {
-          set({ error: error.message, loading: false });
-          showToast('error', 'Invalid email or password');
+          if (error.message !== 'email-not-verified') {
+            set({ error: error.message, loading: false });
+            showToast('error', 'Invalid email or password');
+          }
           throw error;
         }
       },
@@ -97,6 +118,23 @@ export const useAuthStore = create<AuthState>()(
           showToast('success', 'Password reset email sent!');
         } catch (error: any) {
           showToast('error', 'Failed to send reset email');
+          throw error;
+        }
+      },
+
+      resendVerification: async (email, password) => {
+        if (!auth) {
+          showToast('error', 'Firebase not configured.');
+          return;
+        }
+        try {
+          // Temporarily sign in to get the user object, send verification, then sign out
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          await sendEmailVerification(userCredential.user);
+          await signOut(auth);
+          showToast('success', 'Verification email sent! Check your inbox.');
+        } catch (error: any) {
+          showToast('error', 'Failed to send verification email. Check your credentials.');
           throw error;
         }
       },
@@ -138,6 +176,17 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      reloadUser: async () => {
+        if (auth.currentUser) {
+          try {
+            await auth.currentUser.reload();
+            set({ user: auth.currentUser, lastUpdated: Date.now() });
+          } catch (error) {
+            console.error('Failed to reload user:', error);
+          }
+        }
+      },
+
       setUser: (user) => set({ user, loading: false }),
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
@@ -151,7 +200,15 @@ export const useAuthStore = create<AuthState>()(
 
 // Initialize auth listener if auth is available
 if (auth && typeof onAuthStateChanged === 'function') {
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // Always reload to get fresh verification status
+      try {
+        await user.reload();
+      } catch (e) {
+        console.error('Auth reload failed:', e);
+      }
+    }
     useAuthStore.getState().setUser(user);
   });
 } else {

@@ -6,7 +6,7 @@ import { useHistoryStore } from '../stores/historyStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import toast from 'react-hot-toast';
+import { showToast } from '../components/ui/Toast';
 import axios from 'axios';
 
 export const Profile = () => {
@@ -32,11 +32,11 @@ export const Profile = () => {
 
     // Validate file
     if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+      showToast('error', 'Please upload an image file');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size must be less than 5MB');
+      showToast('error', 'Image size must be less than 5MB');
       return;
     }
 
@@ -46,17 +46,17 @@ export const Profile = () => {
 
     try {
       // Use fallback if env var is missing during local dev
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000';
       const response = await axios.post(`${baseUrl}/user/upload-avatar`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       const photoURL = response.data.url;
       await updateUserProfile(user?.displayName || '', photoURL);
-      toast.success('Avatar updated successfully!');
+      showToast('success', 'Avatar updated successfully!');
     } catch (error) {
       console.error('Failed to upload avatar:', error);
-      toast.error('Failed to upload avatar');
+      showToast('error', 'Failed to upload avatar');
     } finally {
       setUploading(false);
     }
@@ -66,10 +66,10 @@ export const Profile = () => {
     setUploading(true);
     try {
       await updateUserProfile(user?.displayName || '', '');
-      toast.success('Avatar removed');
+      showToast('success', 'Avatar removed');
     } catch (error) {
       console.error('Failed to remove avatar:', error);
-      toast.error('Failed to remove avatar');
+      showToast('error', 'Failed to remove avatar');
     } finally {
       setUploading(false);
     }
@@ -77,7 +77,7 @@ export const Profile = () => {
 
   const handleSave = async () => {
     if (!displayName.trim()) {
-      toast.error('Name cannot be empty');
+      showToast('error', 'Name cannot be empty');
       return;
     }
 

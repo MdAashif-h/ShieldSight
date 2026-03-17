@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { cn } from '../../lib/utils';
 
@@ -18,12 +18,14 @@ interface ShapChartProps {
 
 export const ShapChart = ({ features, explanationMethod, baseValue }: ShapChartProps) => {
   // Get top 10 features by absolute contribution
-  const topFeatures = [...features]
+  const topFeatures = [...(features || [])]
     .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
     .slice(0, 10);
 
   // Find max absolute value for scaling
-  const maxContribution = Math.max(...topFeatures.map(f => Math.abs(f.contribution)));
+  const maxContribution = topFeatures.length > 0
+    ? Math.max(...topFeatures.map(f => Math.abs(f.contribution)))
+    : 1;
 
   return (
     <motion.div
@@ -34,12 +36,12 @@ export const ShapChart = ({ features, explanationMethod, baseValue }: ShapChartP
       <Card className="glass">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary" />
-              Feature Analysis (SHAP)
+            <CardTitle className="text-xl font-bold flex items-center gap-2">
+              <Activity className="w-5 h-5 text-primary" />
+              Detailed Analysis
             </CardTitle>
             <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-              {explanationMethod}
+              {explanationMethod || 'N/A'}
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
@@ -53,7 +55,7 @@ export const ShapChart = ({ features, explanationMethod, baseValue }: ShapChartP
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Base Value</span>
               <span className="text-sm font-semibold text-foreground">
-                {baseValue.toFixed(3)}
+                {typeof baseValue === 'number' ? baseValue.toFixed(3) : '0.500'}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -90,13 +92,13 @@ export const ShapChart = ({ features, explanationMethod, baseValue }: ShapChartP
                     </div>
                     <div className="flex items-center gap-3 ml-2">
                       <span className="text-xs text-muted-foreground">
-                        Value: {feature.value.toFixed(3)}
+                        Value: {typeof feature.value === 'number' ? feature.value.toFixed(3) : 'N/A'}
                       </span>
                       <span className={cn(
                         'text-xs font-semibold min-w-[60px] text-right',
                         isPositive ? 'text-green-500' : 'text-red-500'
                       )}>
-                        {isPositive ? '+' : ''}{feature.contribution.toFixed(3)}
+                        {isPositive ? '+' : ''}{typeof feature.contribution === 'number' ? feature.contribution.toFixed(3) : '0.000'}
                       </span>
                     </div>
                   </div>
